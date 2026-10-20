@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Detección de Grooming con Naive Bayes — Informe</title>
+  <style>
+    :root {
+      --acento: #b04a2f;        /* terracota */
+      --acento-oscuro: #7c2f1c;
+      --acento-suave: #fbeee9;
+      --texto: #1c1c1c;
+      --linea: #ecd9d2;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: 'Helvetica Neue', 'Segoe UI', Arial, sans-serif;
+      background: #ffffff;
+      color: var(--texto);
+      line-height: 1.7;
+      font-size: 16px;
+    }
+
+    /* ---------- ENCABEZADO ---------- */
+    header {
+      border-bottom: 1px solid var(--linea);
+      padding: 64px 32px 48px;
+      max-width: 820px;
+      margin: 0 auto;
+    }
+    header .etiqueta {
+      color: var(--acento);
+      font-size: 0.75em;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-bottom: 18px;
+    }
+    header h1 {
+      font-size: 2.2em;
+      font-weight: 700;
+      line-height: 1.2;
+      margin: 0 0 20px;
+      color: var(--texto);
+    }
+    header .datos {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 32px;
+      font-size: 0.9em;
+    }
+    header .datos span {
+      color: var(--texto);
+    }
+    header .datos span b {
+      color: var(--acento);
+      font-weight: 600;
+    }
+
+    /* ---------- CONTENIDO ---------- */
+    main {
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 24px 32px 80px;
+    }
+
+    h2 {
+      font-size: 1.35em;
+      color: var(--texto);
+      font-weight: 600;
+      margin: 56px 0 16px;
+      padding-left: 16px;
+      border-left: 3px solid var(--acento);
+    }
+    h2:first-of-type { margin-top: 24px; }
+
+    h3 {
+      font-size: 1.05em;
+      color: var(--acento-oscuro);
+      font-weight: 600;
+      margin: 32px 0 10px;
+    }
+
+    p { margin: 0 0 16px; }
+
+    /* ---------- NOTA ---------- */
+    .nota {
+      background: var(--acento-suave);
+      border-left: 3px solid var(--acento);
+      padding: 14px 20px;
+      margin: 20px 0;
+      font-size: 0.95em;
+    }
+    .nota b { color: var(--acento-oscuro); }
+
+    /* ---------- CÓDIGO ---------- */
+    pre {
+      background: var(--acento-suave);
+      color: var(--acento-oscuro);
+      padding: 16px 20px;
+      border-radius: 4px;
+      overflow-x: auto;
+      font-family: 'SF Mono', 'Consolas', monospace;
+      font-size: 0.82em;
+      line-height: 1.6;
+      margin: 16px 0;
+    }
+    code {
+      font-family: 'SF Mono', 'Consolas', monospace;
+      background: var(--acento-suave);
+      color: var(--acento-oscuro);
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-size: 0.88em;
+    }
+    pre code {
+      background: transparent;
+      padding: 0;
+      font-size: 1em;
+    }
+
+    /* ---------- TABLAS ---------- */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 18px 0;
+      font-size: 0.92em;
+    }
+    th {
+      text-align: left;
+      color: var(--texto);
+      font-weight: 600;
+      padding: 10px 14px;
+      border-bottom: 2px solid var(--acento);
+    }
+    td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--linea);
+    }
+
+    /* ---------- LISTAS ---------- */
+    ul {
+      padding-left: 20px;
+      margin: 12px 0 18px;
+    }
+    li { margin-bottom: 6px; }
+    li::marker { color: var(--acento); }
+
+    /* ---------- FIGURA ---------- */
+    figure {
+      margin: 24px 0;
+      text-align: center;
+    }
+    figure img {
+      max-width: 100%;
+      border: 1px solid var(--linea);
+      border-radius: 4px;
+    }
+    figcaption {
+      font-size: 0.82em;
+      color: var(--acento);
+      margin-top: 10px;
+    }
+
+    /* ---------- PIE ---------- */
+    footer {
+      border-top: 1px solid var(--linea);
+      padding: 28px 32px;
+      text-align: center;
+      font-size: 0.82em;
+      color: var(--acento);
+    }
+    footer b { color: var(--acento-oscuro); }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="etiqueta">Trabajo Práctico · 2026</div>
+    <h1>Detección de Grooming con Clasificador Bayesiano Naive Bayes</h1>
+    <div class="datos">
+      <span><b>Materia</b> Aprendizaje Automático</span>
+      <span><b>Docente</b> Scudero, Yanina Ximena</span>
+      <span><b>Alumno</b> Lucas Nahuel Llanes</span>
+      <span><b>Carrera</b> Tecnicatura en Ciencia de Datos e IA</span>
+      <span><b>Institución</b> ISFT N° 197</span>
+    </div>
+  </header>
+
+  <main>
+
+    <h2>1. Introducción</h2>
+    <p>El clasificador <strong>Naive Bayes</strong> es un algoritmo de aprendizaje automático fundamentado en el teorema de Bayes que presupone independencia condicional entre las variables de entrada. En este trabajo se implementa un clasificador <strong>Naive Bayes Multinomial</strong> para la detección de <em>grooming</em> en mensajes de texto, incorporando validación cruzada estratificada como esquema de evaluación robusta.</p>
+
+    <h2>2. Planteamiento del problema</h2>
+    <p>La tarea consiste en asignar a cada mensaje una de dos etiquetas: <code>grooming</code> (indicios de manipulación, secreto o pedido de imágenes) o <code>no grooming</code> (conversación cotidiana, académica o recreativa). Para la demostración se construyó un corpus piloto de <strong>20 mensajes</strong> etiquetados manualmente y balanceados al 50%.</p>
+
+    <h3>2.1 Corpus de ejemplo</h3>
+<pre><code>data = {
+    'text': [
+        "¿Cuántos años tenés? No le digas a nadie que hablamos.",
+        "Hola, ¿cómo estás? ¿Querés jugar algo online?",
+        "Sos muy linda, no le muestres esto a tus papás.",
+        "¿Terminaste la tarea de matemáticas?",
+        "Podes mandarme una foto tuya, pero que sea solo para mí.",
+        "¿Querés que te ayude con el juego que no podías pasar?",
+        "No le contés a nadie que hablamos por acá, ¿sí?",
+        "¿Te gustó la película de ayer?",
+        "¿Estás solo en casa ahora?",
+        "¿Querés hacer una videollamada para estudiar juntos?",
+        "No le digas a tus padres que te escribí, es nuestro secreto.",
+        "¿Cómo te fue en el examen de historia?",
+        "Mandame una foto tuya, pero que nadie más la vea.",
+        "¿Jugamos Minecraft esta tarde?",
+        "Sos muy especial para mí, no le cuentes a nadie que hablamos.",
+        "¿Querés que te pase los apuntes de biología?",
+        "¿Podes mostrarme cómo estás vestida ahora?",
+        "¿Tenés ganas de salir a andar en bici mañana?",
+        "No hace falta que le digas a nadie que hablamos tanto.",
+        "¿Querés que estudiemos juntos para el parcial?"
+    ],
+    'label': [
+        "grooming", "no grooming", "grooming", "no grooming", "grooming",
+        "no grooming", "grooming", "no grooming", "grooming", "no grooming",
+        "grooming", "no grooming", "grooming", "no grooming", "grooming",
+        "no grooming", "grooming", "no grooming", "grooming", "no grooming"
+    ]
+}</code></pre>
+
+    <h2>3. Metodología</h2>
+    <p>Se construyó un <strong>pipeline</strong> de scikit-learn que encadena la vectorización del texto con el clasificador:</p>
+    <ul>
+      <li><strong>CountVectorizer</strong>: transforma cada mensaje en un vector de frecuencias (bolsa de palabras).</li>
+      <li><strong>MultinomialNB</strong>: clasificador probabilístico adecuado para conteos de términos.</li>
+      <li><strong>StratifiedKFold (k=5)</strong>: validación cruzada preservando la proporción de clases.</li>
+    </ul>
+<pre><code>pipeline = Pipeline([
+    ('vectorizer', CountVectorizer()),
+    ('classifier', MultinomialNB())
+])
+
+cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+scores = cross_val_score(pipeline, X, y, cv=cv, scoring='accuracy')</code></pre>
+
+    <h2>4. Resultados</h2>
+
+    <h3>4.1 Validación cruzada</h3>
+    <table>
+      <tr><th>Métrica</th><th>Valor</th></tr>
+      <tr><td>Exactitud por fold</td><td>[1.0, 0.5, 1.0, 0.75, 0.75]</td></tr>
+      <tr><td>Exactitud media</td><td><strong>0.80</strong></td></tr>
+      <tr><td>Desviación estándar</td><td><strong>0.187</strong></td></tr>
+    </table>
+    <p>La variabilidad observada es esperable dado el tamaño reducido del corpus: cada fold contiene apenas 4 mensajes, por lo que un único error altera significativamente la métrica.</p>
+
+    <h3>4.2 Reporte de clasificación</h3>
+<pre><code>              precision    recall  f1-score   support
+
+    grooming       0.67      1.00      0.80         2
+ no grooming       1.00      0.80      0.89         5
+
+    accuracy                           0.86         7
+   macro avg       0.83      0.90      0.84         7
+weighted avg       0.90      0.86      0.86         7</code></pre>
+
+    <div class="nota">
+      <b>Observación clave:</b> el <em>recall</em> de 1.00 para la clase <code>grooming</code> indica que no se omitió ningún caso positivo. El precio es un falso positivo (precisión 0.67), situación preferible en este dominio: es menos grave generar una alerta a revisar que dejar pasar un caso real.
+    </div>
+
+    <h3>4.3 Matriz de confusión</h3>
+    <figure>
+      <img src="Gromming.png" alt="Matriz de confusión del clasificador Naive Bayes">
+      <figcaption>2 verdaderos positivos · 4 verdaderos negativos · 1 falso positivo · 0 falsos negativos</figcaption>
+    </figure>
+
+    <h2>5. Inferencia sobre mensajes nuevos</h2>
+    <p>Una vez entrenado el modelo sobre el corpus completo, se evalúan cuatro mensajes no vistos:</p>
+    <table>
+      <tr><th>Mensaje</th><th>Predicción</th></tr>
+      <tr><td>"¿Podés mandarme una foto tuya? No se la muestres a nadie."</td><td><code>grooming</code></td></tr>
+      <tr><td>"¿Jugamos Minecraft esta tarde?"</td><td><code>no grooming</code></td></tr>
+      <tr><td>"No le digas a tus papás que hablamos, ¿sí?"</td><td><code>grooming</code></td></tr>
+      <tr><td>"¿Terminaste el trabajo práctico de historia?"</td><td><code>no grooming</code></td></tr>
+    </table>
+
+    <h2>6. Limitaciones y mejoras</h2>
+    <ul>
+      <li><strong>Corpus reducido:</strong> 20 mensajes son insuficientes para generalizar; se recomienda ampliar a 200–1000 ejemplos.</li>
+      <li><strong>Sin preprocesamiento:</strong> falta normalización, eliminación de stopwords y lematización.</li>
+      <li><strong>Vectorización básica:</strong> <code>CountVectorizer</code> no pondera importancia; conviene evaluar <code>TfidfVectorizer</code>.</li>
+      <li><strong>Independencia condicional:</strong> supuesto no realista en lenguaje natural.</li>
+      <li><strong>Ética:</strong> el modelo debe operar como herramienta supervisada por personas, con protocolos de derivación y resguardo de la privacidad de menores.</li>
+    </ul>
+
+    <h2>7. Conclusión</h2>
+    <p>Se implementó un clasificador Naive Bayes Multinomial integrado en un pipeline de scikit-learn. La validación cruzada arrojó una exactitud media del <strong>80%</strong> (desvío 0.187) y sobre el conjunto de prueba se obtuvo un <strong>86%</strong>, con <strong>recall perfecto para la clase de riesgo</strong>. El trabajo permitió consolidar conceptos centrales —representación vectorial de texto, entrenamiento probabilístico, validación cruzada y análisis mediante matriz de confusión— sobre un problema socialmente relevante.</p>
+
+  </main>
+
+  <footer>
+    <b>Lucas Nahuel Llanes</b> · Tecnicatura en Ciencia de Datos e Inteligencia Artificial · ISFT N° 197 · 2026
+  </footer>
+
+</body>
+</html>
